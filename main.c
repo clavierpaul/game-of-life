@@ -1,6 +1,6 @@
 #include <stdio.h>
+#include <SDL.h>
 
 int main() {
-    printf("Hello, World!\n");
-    return 0;
+    SDL_Log("My name jeff!\n");
 }
