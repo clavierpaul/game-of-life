@@ -11,7 +11,7 @@ bool draw_initialize(SDL_Window** window, SDL_Renderer** renderer, int width, in
     }
 
     *window = SDL_CreateWindow("Game of Life", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                               width * CELL_SIZE,height * CELL_SIZE, 0);
+                               width * CELL_SIZE,height * CELL_SIZE, SDL_WINDOW_RESIZABLE);
     if (*window == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error creating window: %s", SDL_GetError());
         return false;
