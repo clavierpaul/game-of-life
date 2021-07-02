@@ -17,7 +17,7 @@ bool draw_initialize(SDL_Window** window, SDL_Renderer** renderer, int width, in
         return false;
     }
 
-    *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED);
+    *renderer = SDL_CreateRenderer(*window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (*renderer == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error creating renderer: %s", SDL_GetError());
         return false;

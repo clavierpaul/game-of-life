@@ -19,6 +19,7 @@ bool paused_before_click;
 bool mouse_down = false;
 bool should_draw;
 ClickAction click_action;
+double speed = 0.25;
 
 void do_event(SDL_Event event) {
     switch (event.type) {
@@ -33,6 +34,16 @@ void do_event(SDL_Event event) {
                 case SDLK_c:
                     game_clear(game);
                     should_draw = true;
+                    break;
+                case SDLK_LEFT:
+                    if (speed != 1) {
+                        speed += 0.05;
+                    }
+                    break;
+                case SDLK_RIGHT:
+                    if (speed != 0.05) {
+                        speed -= 0.05;
+                    }
                     break;
             }
             break;
@@ -98,11 +109,11 @@ int main() {
 
     game = game_create();
 
-    u_int32_t time = SDL_GetTicks();
+    u_int32_t tick_time = SDL_GetTicks();
+    u_int32_t poll_time = SDL_GetTicks();
     draw_game(renderer, game, width, height);
 
     SDL_SetEventFilter(filter_event, NULL);
-
     while (!quit) {
         should_draw = !paused;
 
@@ -111,14 +122,22 @@ int main() {
             do_event(event);
         }
 
-        if (SDL_GetTicks() - time > 25 && !paused) {
+
+        if (SDL_GetTicks() - tick_time > (100 * speed) && !paused) {
             game_tick(game);
-            time = SDL_GetTicks();
+            tick_time = SDL_GetTicks();
         }
 
         if (should_draw) {
             draw_game(renderer, game, width, height);
         }
+
+        u_int32_t elapsed = SDL_GetTicks() - poll_time;
+        if (elapsed < 16) {
+            SDL_Delay(16 - (SDL_GetTicks() - poll_time));
+        }
+
+        poll_time = SDL_GetTicks();
     }
 
     SDL_DestroyRenderer(renderer);
