@@ -11,15 +11,18 @@ typedef struct game {
     Hashmap* cells;
 } Game;
 
-
 static void game_get_neighbours(Game* game, int x, int y, Cell* neighbours[8], Cell positions[8]) {
     int i = 0;
 
+    // Iterate over adjacent cells
     for (int j = x - 1; j <= x + 1; j++) {
         for (int k = y - 1; k <= y + 1; k++) {
+            // Don't include ourself!
             if (j == x && k == y) continue;
 
             neighbours[i] = hashmap_get(game->cells, &(Cell){ .x = j, .y = k });
+
+            // If a positions array is provided, write to it
             if (positions != NULL) {
                 positions[i].x = j;
                 positions[i].y = k;
@@ -30,11 +33,14 @@ static void game_get_neighbours(Game* game, int x, int y, Cell* neighbours[8], C
     }
 }
 
+// Needed for hashmap library, hashes the Cell struct
 uint64_t game_cell_hash(const void *item, uint64_t seed0, uint64_t seed1) {
     const Cell* cell = item;
     return hashmap_sip(cell, sizeof *cell, seed0, seed1);
 }
 
+// Needed for hashmap library, compares Cells and returns 0 if equal, -1 otherwise
+// Blame strncmp
 int game_cell_compare(const void *a, const void *b, void *udata) {
     const Cell* ca = a;
     const Cell* cb = b;
@@ -44,7 +50,11 @@ int game_cell_compare(const void *a, const void *b, void *udata) {
 }
 
 Game *game_create() {
+    // Seed the hashmap
+    // Clang-tidy is upset that this isn't random enough
+    // Too bad!
     srand(time(NULL));
+
     Game* game = malloc(sizeof *game);
     game->cells = hashmap_new(sizeof(Cell), 0, rand(), rand(), game_cell_hash, game_cell_compare, 0);
     return game;
@@ -77,8 +87,10 @@ typedef struct {
     Hashmap* new_generation;
 } IterData;
 
+// Used by the hashmap library to iterate over each cell,
+// and works out whether the cell lives or dies in the next generation
 bool game_cell_tick_iter(const void *item, void *data) {
-    // C was a mistake
+    // Load data
     const Cell* cell = item;
     Game* game = ((IterData*) data)->game;
     Hashmap* new_generation = ((IterData*) data)->new_generation;
