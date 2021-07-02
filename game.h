@@ -6,20 +6,20 @@
 #define GAMEOFLIFE_GAME_H
 
 #include "stdbool.h"
+#include "hashmap/hashmap.h"
+
+typedef struct hashmap Hashmap;
 
 typedef struct {
-    int width;
-    int height;
-    bool* cells;
-    bool* bufferA;
-    bool* bufferB;
-} Game;
+    int x;
+    int y;
+} Cell;
+
+typedef struct game Game;
 
 /// Creates a new game
-/// \param width Board width
-/// \param height Board height
 /// \return A new Game struct
-Game* game_create(int width, int height);
+Game* game_create();
 
 /// Deletes all buffers associated with a game and then deletes the game
 /// \param game Game to be deleted

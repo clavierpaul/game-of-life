@@ -4,89 +4,138 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "game.h"
 
-static inline int game_get_total_cells(Game* game) {
-    return game->height * game->width;
-}
+typedef struct game {
+    Hashmap* cells;
+} Game;
 
-static inline int game_get_cell_index(Game* game, int x, int y) {
-    return y * game->width + x;
-}
 
-static bool game_is_out_of_bounds(Game* game, int x, int y) {
-    return x < 0 || x >= game->width || y < 0 || y >= game->height;
-}
-
-static int game_get_neighbour_count(Game* game, int x, int y) {
-    int count = 0;
+static void game_get_neighbours(Game* game, int x, int y, Cell* neighbours[8], Cell positions[8]) {
+    int i = 0;
 
     for (int j = x - 1; j <= x + 1; j++) {
         for (int k = y - 1; k <= y + 1; k++) {
-            if ((j == x && k == y) || game_is_out_of_bounds(game, j, k)) continue;
+            if (j == x && k == y) continue;
 
-            if (game_get_cell(game, j, k)) {
-                count++;
+            neighbours[i] = hashmap_get(game->cells, &(Cell){ .x = j, .y = k });
+            if (positions != NULL) {
+                positions[i].x = j;
+                positions[i].y = k;
             }
+
+            i++;
         }
     }
-
-    return count;
 }
 
-Game *game_create(int width, int height) {
+uint64_t game_cell_hash(const void *item, uint64_t seed0, uint64_t seed1) {
+    const Cell* cell = item;
+    return hashmap_sip(cell, sizeof *cell, seed0, seed1);
+}
+
+int game_cell_compare(const void *a, const void *b, void *udata) {
+    const Cell* ca = a;
+    const Cell* cb = b;
+
+    // Hashmap expects 0 on equal
+    return ca->x == cb->x && ca->y == cb->y ? 0 : -1;
+}
+
+Game *game_create() {
+    srand(time(NULL));
     Game* game = malloc(sizeof *game);
-    game->height = height;
-    game->width = width;
-    game->bufferA = calloc(height * width, sizeof *game->bufferA);
-    game->bufferB = calloc(height * width, sizeof *game->bufferB);
-    game->cells = game->bufferA;
+    game->cells = hashmap_new(sizeof(Cell), 0, rand(), rand(), game_cell_hash, game_cell_compare, 0);
     return game;
 }
 
 void game_free(Game* game) {
-    free(game->bufferA);
-    free(game->bufferB);
+    hashmap_free(game->cells);
     free(game);
 }
 
 bool game_get_cell(Game* game, int x, int y) {
-    return game->cells[game_get_cell_index(game, x, y)];
+    Cell* cell = hashmap_get(game->cells, &(Cell){ .x = x, .y = y });
+    return cell != NULL;
 }
 
 void game_clear(Game* game) {
-    int total_cells = game_get_total_cells(game);
-    memset(game->bufferA, false, total_cells);
-    memset(game->bufferB, false, total_cells);
-    game->cells = game->bufferA;
+    hashmap_clear(game->cells, true);
 }
 
 void game_toggle_cell(Game* game, int x, int y) {
-    int c = game_get_cell_index(game, x, y);
-    game->cells[c] = !game->cells[c];
+    if (game_get_cell(game, x, y)) {
+        hashmap_delete(game->cells, &(Cell){ .x = x, .y = y });
+    } else {
+        hashmap_set(game->cells, &(Cell){ .x = x, .y = y });
+    }
 }
 
-void game_tick(Game* game) {
-    // Get the buffer for the new generation
-    // This is needed for the adjacent cells to be calculated correctly
-    bool* new_generation = game->cells == game->bufferA ? game->bufferB : game->bufferA;
+typedef struct {
+    Game* game;
+    Hashmap* new_generation;
+} IterData;
 
-    for (int x = 0; x < game->width; x++) {
-        for (int y = 0; y < game->height; y++) {
-            bool cell = game_get_cell(game, x, y);
-            int neighbours = game_get_neighbour_count(game, x, y);
+bool game_cell_tick_iter(const void *item, void *data) {
+    // C was a mistake
+    const Cell* cell = item;
+    Game* game = ((IterData*) data)->game;
+    Hashmap* new_generation = ((IterData*) data)->new_generation;
 
-            // Game of life rules
-            if (neighbours == 3 && !cell) {
-                new_generation[game_get_cell_index(game, x, y)] = true; // A new cell is born
-            } else if (cell && (neighbours < 2 || neighbours > 3)) {
-                new_generation[game_get_cell_index(game, x, y)] = false; // The cell dies
-            } else {
-                new_generation[game_get_cell_index(game, x, y)] = game->cells[game_get_cell_index(game, x, y)];
+    // Get all neighbours of the alive cell
+    // Save the positions so we can check NULL (dead) cells
+    Cell* neighbours[8];
+    Cell positions[8];
+
+    game_get_neighbours(game, cell->x, cell->y, neighbours, positions);
+    int neighbour_count = 0;
+
+    for (int i = 0; i < 8; i++) {
+        // Get adjacent cell
+        Cell* adjacent = neighbours[i];
+
+        // If cell is dead, check its neighbours to see if it should be alive
+        // This means dead cells are potentially checked multiple times but it's probably fine
+        if (adjacent == NULL) {
+            Cell* adjacent_neighbours[8];
+            Cell position = positions[i];
+
+            // If the cell was already added don't add it again
+            if (hashmap_get(new_generation, &position) != NULL) continue;
+
+            game_get_neighbours(game, position.x, position.y, adjacent_neighbours, NULL);
+            int adjacent_count = 0;
+
+            for (int a = 0; a < 8; a++) {
+                if (adjacent_neighbours[a] != NULL) {
+                    adjacent_count++;
+                }
             }
+
+            // If there are 3 alive cells adjacent to dead cell, add it to the list
+            if (adjacent_count == 3) {
+                hashmap_set(new_generation, &(Cell) { .x = position.x, .y = position.y });
+            }
+        } else {
+            neighbour_count++;
         }
     }
 
-    // Swap buffer
+    // If there are 2 or 3 neighbours, the cell survives to the next generation
+    if (neighbour_count == 2 || neighbour_count == 3) {
+        // Copy values into new generation
+        hashmap_set(new_generation, &(Cell){ .x = cell->x, .y = cell->y });
+    }
+
+    return true;
+}
+
+void game_tick(Game* game) {
+    // Create a new map for the new generation
+    // This is needed for the adjacent cells to be calculated correctly
+    Hashmap *new_generation = hashmap_new(sizeof(Cell), 0, rand(), rand(), game_cell_hash, game_cell_compare, 0);
+    hashmap_scan(game->cells, game_cell_tick_iter, &(IterData){ .game = game, .new_generation = new_generation });
+    hashmap_free(game->cells);
     game->cells = new_generation;
 }

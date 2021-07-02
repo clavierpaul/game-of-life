@@ -10,8 +10,6 @@
 #include "game.h"
 
 // Grid constants
-static const int WIDTH = 100;
-static const int HEIGHT = 50;
 static const int CELL_SIZE = 12;
 
 // Color constants
@@ -22,12 +20,16 @@ static const SDL_Color CELL_COLOR = {28, 179, 255};
 /// Initializes SDL2 and creates a window and renderer for the application
 /// \param window Application window
 /// \param renderer Application renderer
+/// \param width Grid width
+/// \param height Grid height
 /// \return true on success, false on error
-bool draw_initialize(SDL_Window** window, SDL_Renderer** renderer);
+bool draw_initialize(SDL_Window** window, SDL_Renderer** renderer, int width, int height);
 
 /// Draws the current game state
 /// \param renderer Application renderer
 /// \param game Current game
-void draw_game(SDL_Renderer* renderer, Game* game);
+/// \param width Grid width
+/// \param height Grid height
+void draw_game(SDL_Renderer* renderer, Game* game, int width, int height);
 
 #endif //GAMEOFLIFE_DRAW_H
