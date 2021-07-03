@@ -36,11 +36,13 @@ void do_event(SDL_Event event) {
                     should_draw = true;
                     break;
                 case SDLK_LEFT:
+                    // Speed limiter
                     if (speed != 1) {
                         speed += 0.05;
                     }
                     break;
                 case SDLK_RIGHT:
+                    // Speed limiter
                     if (speed != 0.05) {
                         speed -= 0.05;
                     }
@@ -48,25 +50,32 @@ void do_event(SDL_Event event) {
             }
             break;
         case SDL_MOUSEBUTTONDOWN: {
+            // Save paused state so we can unpause if necessary when done editing
             paused_before_click = paused;
             paused = true;
             mouse_down = true;
 
+            // Convert mouse coords to grid coords
             int x = event.motion.x / CELL_SIZE;
             int y = event.motion.y / CELL_SIZE;
 
             // Set click action for further cells that are dragged onto
+            // e.g. if a cell is added, any grid cells dragged over should also be added
             bool cell_exists = game_get_cell(game, x, y);
             click_action = cell_exists ? delete : add;
+
+            // Toggle the cell state and draw the new board
             game_toggle_cell(game, x, y);
             should_draw = true;
             break;
         }
         case SDL_MOUSEMOTION:
             if (mouse_down) {
+                // Convert mouse coords to grid coords
                 int x = event.motion.x / CELL_SIZE;
                 int y = event.motion.y / CELL_SIZE;
 
+                // Only edit if the cell state matches the click action
                 bool cell_exists = game_get_cell(game, x, y);
 
                 if ((cell_exists && click_action == delete) || (!cell_exists && click_action == add)) {
@@ -76,6 +85,7 @@ void do_event(SDL_Event event) {
             }
             break;
         case SDL_MOUSEBUTTONUP:
+            // Restore pause state
             paused = paused_before_click;
             mouse_down = false;
             break;
@@ -111,10 +121,15 @@ int main() {
 
     u_int32_t tick_time = SDL_GetTicks();
     u_int32_t poll_time = SDL_GetTicks();
+
+    // Draw initial board
     draw_game(renderer, game, width, height);
 
     SDL_SetEventFilter(filter_event, NULL);
     while (!quit) {
+        // By default, don't draw when paused
+        // Overridden by events that update the screen while paused
+        // (e.g. placing cells)
         should_draw = !paused;
 
         SDL_Event event;
@@ -122,7 +137,7 @@ int main() {
             do_event(event);
         }
 
-
+        // If it's time to do a new tick, perform it
         if (SDL_GetTicks() - tick_time > (100 * speed) && !paused) {
             game_tick(game);
             tick_time = SDL_GetTicks();
@@ -132,6 +147,7 @@ int main() {
             draw_game(renderer, game, width, height);
         }
 
+        // Poll at 60 Hz or else we will use 100% of the CPU lol
         u_int32_t elapsed = SDL_GetTicks() - poll_time;
         if (elapsed < 16) {
             SDL_Delay(16 - (SDL_GetTicks() - poll_time));

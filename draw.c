@@ -32,6 +32,7 @@ void draw_game(SDL_Renderer* renderer, Game* game, int width, int height) {
     SDL_RenderClear(renderer);
 
     // Draw cells
+    // TODO: It would be more efficient to iterate over cells in Game and draw the ones in view
     SDL_SetRenderDrawColor(renderer, CELL_COLOR.r, CELL_COLOR.g, CELL_COLOR.b, 255);
 
     for (int x = 0; x < width; x++) {
