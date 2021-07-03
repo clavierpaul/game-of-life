@@ -1,6 +1,7 @@
 #include <SDL.h>
 #include "game.h"
 #include "draw.h"
+#include "rle.h"
 
 typedef enum { add, delete } ClickAction;
 
@@ -113,11 +114,19 @@ int filter_event(void *data, SDL_Event* event) {
 }
 
 int main() {
+    char* test_file = "x = 36, y = 9, rule = B3/S23\n"
+                      "24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4b\n"
+                      "obo$10bo5bo7bo$11bo3bo$12b2o!";
+    RLEGame rle_game;
+    rle_parse(&rle_game, test_file);
+
+    SDL_Log("Width: %d, Height: %d", rle_game.width, rle_game.height);
+
     if (!draw_initialize(&window, &renderer, width, height)) {
         return EXIT_FAILURE;
     }
 
-    game = game_create();
+    game = rle_game.game;
 
     u_int32_t tick_time = SDL_GetTicks();
     u_int32_t poll_time = SDL_GetTicks();
