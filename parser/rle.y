@@ -21,7 +21,8 @@
 
 %%
 file:
-    tags header body END
+      tags header body END
+    | header body END
     ;
 
 tag: TAG { rle_add_tag($1); }
@@ -42,21 +43,18 @@ header:
     | header_setting
     ;
 
-cells:
+definition:
       NUMBER CELL_ALIVE { rle_add_cells($1); }
     | NUMBER RULE_BORN_OR_CELL_DEAD { rle_skip_cells($1); }
+    | NUMBER NEXT_LINE { rle_next_line($1); }
     | CELL_ALIVE { rle_add_cells(1); }
     | RULE_BORN_OR_CELL_DEAD { rle_skip_cells(1); }
-    ;
-
-row:
-      cells NEXT_LINE { rle_next_line(); }
-    | cells
+    | NEXT_LINE { rle_next_line(1); }
     ;
 
 body:
-      body row
-    | row
+      body definition
+    | definition
     ;
 %%
 

@@ -114,23 +114,27 @@ int filter_event(void *data, SDL_Event* event) {
 }
 
 int main() {
-    char* test_file = "#N Gosper glider gun\n"
-                      "#C This was the first gun discovered.\n"
-                      "#C As its name suggests, it was discovered by Bill Gosper.\n"
-                      "x = 36, y = 9, rule = B3/S23\n"
-                      "24bo$22bobo$12b2o6b2o12b2o$11bo3bo4b2o12b2o$2o8bo5bo3b2o$2o8bo3bob2o4b\n"
-                      "obo$10bo5bo7bo$11bo3bo$12b2o!esfiefijliewjiofjlewa";
+    char* test_file = "#N 104P25\n"
+                      "#O Noam Elkies\n"
+                      "#C A period-25 oscillator\n"
+                      "#C http://www.conwaylife.com/wiki/index.php?title=98P25\n"
+                      "x = 38, y = 23, rule = b3/s23\n"
+                      "9b2o4b2o3bo17b$9bobo2bobo3b3o15b$11bo2bo8bo14b$10bo4bo6b2o14b$10b2o2b\n"
+                      "2o22b$12b2o24b2$36b2o$2o24bo6b2o2bo$o2b2o19b2obo5bob2ob$b2obo19bo2bo4b\n"
+                      "o5b$5bo5b3o10b3o5bo5b$5bo4bo2bo19bob2ob$b2obo5bob2o19b2o2bo$o2b2o6bo\n"
+                      "24b2o$2o36b2$24b2o12b$22b2o2b2o10b$14b2o6bo4bo10b$14bo8bo2bo11b$15b3o\n"
+                      "3bobo2bobo9b$17bo3b2o4b2o!";
 
-    rle_parse(test_file);
+    RLEGame* rle_game = rle_parse(test_file);
 
-    /*
-    SDL_Log("Width: %d, Height: %d", rle_game.width, rle_game.height);
+    SDL_Log("Name: %s", rle_game->name);
+    SDL_Log("Width: %d, Height: %d", rle_game->width, rle_game->height);
 
     if (!draw_initialize(&window, &renderer, width, height)) {
         return EXIT_FAILURE;
     }
 
-    game = rle_game.game;
+    game = rle_game->game;
 
     u_int32_t tick_time = SDL_GetTicks();
     u_int32_t poll_time = SDL_GetTicks();
@@ -172,8 +176,7 @@ int main() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
-    game_free(game);
+    rle_free_game(rle_game);
 
     return EXIT_SUCCESS;
-     */
 }

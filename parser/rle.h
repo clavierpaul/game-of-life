@@ -8,7 +8,7 @@
 #include "../game.h"
 
 typedef struct {
-    char* name; // Reserved for future implementation
+    char* name;
     int width;
     int height;
     Game* game;
@@ -21,8 +21,9 @@ void rle_set_height(int height);
 void rle_set_rules(int born, int survive);
 void rle_add_cells(int cells);
 void rle_skip_cells(int cells);
-void rle_next_line();
+void rle_next_line(int lines);
 
-bool rle_parse(char* file);
+void rle_free_game(RLEGame* rle_game);
+RLEGame* rle_parse(char* file);
 
 #endif //GAMEOFLIFE_RLE_H
