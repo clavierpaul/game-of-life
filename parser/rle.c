@@ -10,7 +10,10 @@ extern int yyparse();
 extern YY_BUFFER_STATE yy_scan_string(char * str);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
 extern int yydebug;
-//extern int yy_flex_debug;
+
+static int x;
+static int y;
+static RLEGame* game;
 
 void rle_add_tag(char* tag) {
     SDL_Log("%s", tag);
@@ -29,9 +32,25 @@ void rle_set_rules(int born, int survive) {
     SDL_Log("Rules = B%d/S%d", born, survive);
 }
 
-void rle_parse(char* file) {
-    //yydebug = 1;
+void rle_add_cells(int cells) {
+    SDL_Log("Adding %d cells", cells);
+}
+
+void rle_skip_cells(int cells) {
+    SDL_Log("Skipping %d cells", cells);
+}
+
+void rle_next_line(int cells) {
+    SDL_Log("Next line");
+}
+
+bool rle_parse(char* file) {
+    x = 0;
+    y = 0;
+
     YY_BUFFER_STATE buffer = yy_scan_string(file);
-    yyparse();
+    if (yyparse() != 0) {
+        SDL_Log("Error parsing RLE file");
+    }
     yy_delete_buffer(buffer);
 }

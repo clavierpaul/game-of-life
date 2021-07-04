@@ -7,9 +7,8 @@
 %option noyywrap
 
 %%
-[ \t]+      ;
+[ \t\n]+    ;
 #[^\n]+ { yylval.sval = strdup(yytext); return TAG; }
-\n          { return NEWLINE; };
 x|X         { return WIDTH; }
 y|Y         { return HEIGHT; }
 rule        { return RULE; }
@@ -20,4 +19,5 @@ b|B         { return RULE_BORN_OR_CELL_DEAD; } // unfortunately b can be both de
 \/s|\/S     { return RULE_SURVIVE; }
 o|O         { return CELL_ALIVE; }
 \$          { return NEXT_LINE; } // not to be confused with newline
+!.+         { return END; }
 %%

@@ -13,18 +13,18 @@
 }
 
 %token WIDTH HEIGHT RULE
-%token EQUALS COMMA SLASH NEWLINE
+%token EQUALS COMMA
 %token RULE_SURVIVE RULE_BORN_OR_CELL_DEAD
-%token CELL_ALIVE NEXT_LINE
+%token CELL_ALIVE NEXT_LINE END
 %token <ival> NUMBER
 %token <sval> TAG
 
 %%
 file:
-    tags header
+    tags header body END
     ;
 
-tag: TAG NEWLINE { rle_add_tag($1); }
+tag: TAG { rle_add_tag($1); }
 
 tags:
       tags tag
@@ -37,14 +37,28 @@ header_setting:
     | RULE EQUALS RULE_BORN_OR_CELL_DEAD NUMBER RULE_SURVIVE NUMBER { rle_set_rules($4, $6); }
     ;
 
-header_settings:
-      header_settings COMMA header_setting
+header:
+      header COMMA header_setting
     | header_setting
     ;
 
-header: header_settings NEWLINE;
+cells:
+      NUMBER CELL_ALIVE { rle_add_cells($1); }
+    | NUMBER RULE_BORN_OR_CELL_DEAD { rle_skip_cells($1); }
+    | CELL_ALIVE { rle_add_cells(1); }
+    | RULE_BORN_OR_CELL_DEAD { rle_skip_cells(1); }
+    ;
+
+row:
+      cells NEXT_LINE { rle_next_line(); }
+    | cells
+    ;
+
+body:
+      body row
+    | row
+    ;
 %%
 
-void yyerror(const char *s) {
-    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error parsing RLE file");
-}
+// Don't care about yyerror since error handling in done in rle.c
+void yyerror(const char *s) {}
